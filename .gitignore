@@ -1,0 +1,13 @@
+target/
+node_modules/
+package-lock.json
+.vscode/
+.env
+.DS_Store
+
+bin/*
+!bin/.gitkeep
+
+AGENTS.md
+user_preferences.md
+.claude/

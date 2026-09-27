@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "kind": "local-folder",
+  "label": "Local folder",
+  "icon": "theme:folder-symbolic",
+  "identity": "name",
+  "summary": {
+    "fmt": "{path}"
+  },
+  "fields": [
+    {
+      "bind": "name",
+      "type": "text",
+      "scope": "record",
+      "required": true
+    },
+    {
+      "bind": "folder",
+      "type": "text",
+      "scope": "record",
+      "empty_as_absent": true
+    },
+    {
+      "bind": "path",
+      "type": "path",
+      "required": true,
+      "empty_as_absent": true
+    }
+  ],
+  "form": {
+    "t": "column",
+    "spacing": 4,
+    "children": [
+      {
+        "t": "input",
+        "id": "name",
+        "bind": "name",
+        "chrome": "row",
+        "title": "Name",
+        "placeholder": "My folder"
+      },
+      {
+        "t": "input",
+        "id": "path",
+        "bind": "path",
+        "chrome": "row",
+        "variant": "path",
+        "title": "Folder",
+        "placeholder": "/home/me/projects",
+        "picker": {
+          "mode": "folder",
+          "title": "Choose a folder"
+        }
+      },
+      {
+        "t": "text",
+        "role": "dim",
+        "wrap": true,
+        "margin_top": 8,
+        "text": "The panel shows this folder and nothing above it. Its terminal is a line-echo shell the plugin answers itself."
+      }
+    ]
+  }
+}

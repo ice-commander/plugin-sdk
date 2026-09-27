@@ -1,0 +1,21 @@
+[package]
+name = "sdk-hello-fs"
+version = "0.0.0"
+edition = "2021"
+description = "SDK example: a file extension that opens like a folder"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ic-plugin-api = { workspace = true }
+
+[features]
+default = ["export-abi"]
+export-abi = []
+
+[dev-dependencies]
+# The host table the plugin's own tests install behind it.
+ic-plugin-api = { workspace = true, features = ["testing"] }

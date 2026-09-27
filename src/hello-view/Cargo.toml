@@ -1,0 +1,18 @@
+[package]
+name = "sdk-hello-view"
+version = "0.0.0"
+edition = "2021"
+description = "SDK example: one file shown three ways, by the application it is shown in"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ic-plugin-api = { workspace = true }
+serde_json = { workspace = true }
+
+[features]
+default = ["export-abi"]
+export-abi = []

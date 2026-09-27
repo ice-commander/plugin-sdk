@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "kind": "website",
+  "label": "Website",
+  "icon": "theme:folder-remote-symbolic",
+  "identity": "name",
+  "summary": {
+    "fmt": "{url}"
+  },
+  "fields": [
+    {
+      "bind": "name",
+      "type": "text",
+      "scope": "record",
+      "required": true
+    },
+    {
+      "bind": "folder",
+      "type": "text",
+      "scope": "record",
+      "empty_as_absent": true
+    },
+    {
+      "bind": "url",
+      "type": "text",
+      "required": true,
+      "empty_as_absent": true
+    },
+    {
+      "bind": "user_agent",
+      "type": "text",
+      "empty_as_absent": true,
+      "default": "ice-commander-sdk"
+    },
+    {
+      "bind": "follow_redirects",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "bind": "token",
+      "type": "text",
+      "secret": true,
+      "empty_as_absent": true,
+      "when": {
+        "truthy": "state.send_token"
+      }
+    },
+    {
+      "bind": "send_token",
+      "type": "bool",
+      "default": false
+    }
+  ],
+  "form": {
+    "t": "column",
+    "spacing": 4,
+    "children": [
+      {
+        "t": "input",
+        "id": "name",
+        "bind": "name",
+        "chrome": "row",
+        "title": "Name",
+        "placeholder": "My site"
+      },
+      {
+        "t": "input",
+        "id": "url",
+        "bind": "url",
+        "chrome": "row",
+        "title": "Address",
+        "placeholder": "https://example.org"
+      },
+      {
+        "t": "input",
+        "id": "user_agent",
+        "bind": "user_agent",
+        "chrome": "row",
+        "title": "User agent"
+      },
+      {
+        "t": "switch",
+        "id": "follow_redirects",
+        "bind": "follow_redirects",
+        "title": "Follow redirects"
+      },
+      {
+        "t": "separator",
+        "margin_top": 8
+      },
+      {
+        "t": "switch",
+        "id": "send_token",
+        "bind": "send_token",
+        "emit": "change",
+        "title": "Send an authorization token"
+      },
+      {
+        "t": "input",
+        "id": "token",
+        "bind": "token",
+        "chrome": "row",
+        "variant": "masked",
+        "title": "Token",
+        "visible": {
+          "truthy": "state.send_token"
+        }
+      },
+      {
+        "t": "text",
+        "role": "dim",
+        "wrap": true,
+        "margin_top": 8,
+        "text": "Connecting fetches the page once and shows what it links to."
+      }
+    ]
+  }
+}

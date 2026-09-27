@@ -1,0 +1,18 @@
+[package]
+name = "sdk-hello-toolbar"
+version = "0.0.0"
+edition = "2021"
+description = "SDK example: a toolbar button that opens a declarative window"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ic-plugin-api = { workspace = true }
+serde_json = { workspace = true }
+
+[features]
+default = ["export-abi"]
+export-abi = []
