@@ -1,0 +1,21 @@
+[package]
+name = "sdk-hello-panel"
+version = "0.0.0"
+edition = "2021"
+description = "SDK example: a filesystem that dresses its own panel"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ic-plugin-api = { workspace = true }
+
+[features]
+default = ["export-abi"]
+export-abi = []
+
+[dev-dependencies]
+# The host table the plugin's own tests install behind it.
+ic-plugin-api = { workspace = true, features = ["testing"] }

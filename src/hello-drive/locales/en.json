@@ -1,0 +1,8 @@
+{
+  "hello_drive.forget": "Forget the counts",
+  "hello_drive.never_opened": "never opened",
+  "hello_drive.opened_once": "opened once",
+  "hello_drive.opened_times": "opened {count} times",
+  "hello_drive.shelves": "Shelves",
+  "hello_drive.title": "Shelf"
+}

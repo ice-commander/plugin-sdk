@@ -1,0 +1,13 @@
+[workspace]
+members = ["src/hello-fs", "src/hello-toolbar", "src/hello-header", "src/website-fs", "src/hello-events", "src/hello-panel", "src/hello-drive", "src/hello-view", "src/hello-tree", "src/hello-source", "src/hello-canvas", "src/hello-media", "src/hello-shell"]
+resolver = "2"
+
+[workspace.dependencies]
+serde_json = "1.0"
+ic-plugin-api = { git = "https://github.com/ice-commander/plugin-api.git", branch = "main" }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true

@@ -1,0 +1,19 @@
+[package]
+name = "sdk-website-fs"
+version = "0.0.0"
+edition = "2021"
+description = "SDK example: a connection kind that shows what a web page links to"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ic-plugin-api = { workspace = true }
+serde_json = { workspace = true }
+ureq = "3"
+
+[features]
+default = ["export-abi"]
+export-abi = []

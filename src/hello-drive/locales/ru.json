@@ -1,0 +1,8 @@
+{
+  "hello_drive.forget": "Забыть счётчики",
+  "hello_drive.never_opened": "ещё не открывали",
+  "hello_drive.opened_once": "открывали один раз",
+  "hello_drive.opened_times": "открывали {count} раз",
+  "hello_drive.shelves": "Полки",
+  "hello_drive.title": "Полка"
+}
