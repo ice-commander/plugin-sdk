@@ -39,63 +39,89 @@ thread_local! {
     static ANSWER: RefCell<Vec<u8>> = const { RefCell::new(Vec::new()) };
 }
 
+/// What to count is a `choice` drawn as a list (`"chrome": "list"`): every option in sight on the left, the picked
+/// one marked. An application from before list choices draws the same choice as a drop-down, so nothing breaks.
 pub fn document() -> Value {
     json!({
         "schema": 1,
         "kind": "sdk.hello.events",
         "data": { "count": "nothing typed yet", "status": "" },
-        "fields": [ { "bind": "text", "type": "text" } ],
+        "fields": [
+            { "bind": "text", "type": "text" },
+            { "bind": "unit", "type": "text", "default": "characters" }
+        ],
         "form": {
             "t": "view",
             "surface": "dialog",
-            "width": 460,
+            "width": 560,
             "padding": 16,
             "spacing": 8,
             "children": [
                 { "t": "text", "text": "Type, then press a button", "role": "title2" },
-                { "t": "input", "id": "field", "bind": "text", "chrome": "row",
-                  "title": "Text", "placeholder": "say something",
-                  "emit": "change", "debounce_ms": 150 },
-                { "t": "text", "id": "count", "role": "dim", "text": "{data.count}" },
-                { "t": "row", "spacing": 8, "margin_top": 8, "children": [
-                    { "t": "button", "id": "shout", "label": "SHOUT", "role": "primary",
-                      "intent": { "do": "emit", "node": "shout" } },
-                    { "t": "button", "id": "copy", "label": "Copy",
-                      "intent": { "do": "emit", "node": "copy" } },
-                    { "t": "button", "id": "clear", "label": "Clear", "role": "destructive",
-                      "intent": { "do": "emit", "node": "clear" } }
-                ]},
-                { "t": "text", "id": "status", "role": "caption", "text": "{data.status}",
-                  "visible": { "not": { "empty": "data.status" } } }
+                { "t": "row", "id": "layout", "spacing": 12, "children": [
+                    { "t": "choice", "id": "unit", "bind": "unit", "chrome": "list", "width": 120,
+                      "title": "Count", "emit": "change",
+                      "options": [
+                        { "value": "characters", "label": "Characters" },
+                        { "value": "words", "label": "Words" },
+                        { "value": "lines", "label": "Lines" } ] },
+                    editor()
+                ]}
             ]
         }
     })
 }
 
-fn counted(text: &str) -> String {
-    match text.chars().count() {
+/// The field, what it counts, and the buttons: everything right of the list.
+fn editor() -> Value {
+    json!({ "t": "column", "spacing": 8, "weight": 1, "children": [
+        { "t": "input", "id": "field", "bind": "text", "chrome": "row",
+          "title": "Text", "placeholder": "say something",
+          "emit": "change", "debounce_ms": 150 },
+        { "t": "text", "id": "count", "role": "dim", "text": "{data.count}" },
+        { "t": "row", "spacing": 8, "margin_top": 8, "children": [
+            { "t": "button", "id": "shout", "label": "SHOUT", "role": "primary",
+              "intent": { "do": "emit", "node": "shout" } },
+            { "t": "button", "id": "copy", "label": "Copy",
+              "intent": { "do": "emit", "node": "copy" } },
+            { "t": "button", "id": "clear", "label": "Clear", "role": "destructive",
+              "intent": { "do": "emit", "node": "clear" } }
+        ]},
+        { "t": "text", "id": "status", "role": "caption", "text": "{data.status}",
+          "visible": { "not": { "empty": "data.status" } } }
+    ]})
+}
+
+fn counted(text: &str, unit: &str) -> String {
+    let (count, one, many) = match unit {
+        "words" => (text.split_whitespace().count(), "word", "words"),
+        "lines" => (text.lines().count(), "line", "lines"),
+        _ => (text.chars().count(), "character", "characters"),
+    };
+    match count {
         0 => "nothing typed yet".to_string(),
-        1 => "1 character".to_string(),
-        many => format!("{many} characters"),
+        1 => format!("1 {one}"),
+        count => format!("{count} {many}"),
     }
 }
 
 pub fn reply_for(event: &Value) -> Value {
     let text = event["values"]["text"].as_str().unwrap_or_default();
+    let unit = event["values"]["unit"].as_str().unwrap_or("characters");
     let kind = event["type"].as_str().unwrap_or_default();
     let node = event["node"].as_str().unwrap_or_default();
 
     match (kind, node) {
-        ("change", _) => json!({ "set": { "data.count": counted(text), "data.status": "" } }),
+        ("change", _) => json!({ "set": { "data.count": counted(text, unit), "data.status": "" } }),
 
         ("activate", "shout") => json!({
             "put": { "field": text.to_uppercase() },
-            "set": { "data.count": counted(text), "data.status": "shouted" }
+            "set": { "data.count": counted(text, unit), "data.status": "shouted" }
         }),
 
         ("activate", "clear") => json!({
             "put": { "field": "" },
-            "set": { "data.count": counted(""), "data.status": "cleared" }
+            "set": { "data.count": counted("", unit), "data.status": "cleared" }
         }),
 
         ("activate", "copy") if !text.is_empty() => json!({
@@ -104,7 +130,7 @@ pub fn reply_for(event: &Value) -> Value {
         }),
         ("activate", "copy") => json!({ "set": { "data.status": "nothing to copy" } }),
 
-        ("opened", _) => json!({ "set": { "data.count": counted(text) } }),
+        ("opened", _) => json!({ "set": { "data.count": counted(text, unit) } }),
 
         _ => json!({}),
     }
@@ -235,6 +261,19 @@ mod tests {
             json!("3 characters"),
             "counted in characters, not bytes"
         );
+    }
+
+    #[test]
+    fn the_count_follows_what_the_list_says_to_count() {
+        let picked = |unit: &str, text: &str| {
+            reply_for(&json!({ "type": "change", "node": "unit", "bind": "unit",
+                               "values": { "text": text, "unit": unit } }))["set"]["data.count"]
+                .clone()
+        };
+        assert_eq!(picked("words", "two words"), json!("2 words"));
+        assert_eq!(picked("lines", "one\ntwo\nthree"), json!("3 lines"));
+        assert_eq!(picked("lines", "one line"), json!("1 line"));
+        assert_eq!(picked("characters", "abc"), json!("3 characters"));
     }
 
     #[test]

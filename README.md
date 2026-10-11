@@ -28,7 +28,9 @@ in JSON. The smallest thing that puts something of your own on the screen.
 instead, and the button changes its picture on every press.
 
 **`hello-events`** — a window that reads what is typed into it, reacts as it is
-typed, and answers button presses.
+typed, and answers button presses. What it counts is picked from a list on the
+left: a `choice` with `"chrome": "list"` (Ice Commander 0.8.133 and later; before
+that the same choice is drawn as a drop-down).
 
 **`hello-fs`** — a file extension that opens like a folder. The smallest
 filesystem there is: it lists, it reads, and nothing else.
