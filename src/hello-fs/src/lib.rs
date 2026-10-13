@@ -91,6 +91,7 @@ struct Opened {
     view: Vec<IcDirEntry>,
     bytes: Vec<u8>,
     error: CString,
+    said: CString,
 }
 
 fn with_opened<R>(handle: IcFsHandle, f: impl FnOnce(&mut Opened) -> R) -> Option<R> {
@@ -204,7 +205,15 @@ extern "C" fn fs_is_read_only(_handle: IcFsHandle) -> c_int {
 }
 
 extern "C" fn fs_last_error(handle: IcFsHandle) -> *const c_char {
-    with_opened(handle, |opened| opened.error.as_ptr()).unwrap_or(std::ptr::null())
+    with_opened(handle, |opened| {
+        opened.said = std::mem::take(&mut opened.error);
+        if opened.said.as_bytes().is_empty() {
+            std::ptr::null()
+        } else {
+            opened.said.as_ptr()
+        }
+    })
+    .unwrap_or(std::ptr::null())
 }
 
 pub fn vtable() -> IcFsVTable {
@@ -402,10 +411,11 @@ mod tests {
         let asked = CString::new("missing").expect("a path");
         let got = fs_read(handle, asked.as_ptr());
         assert_eq!(got.len, 0);
-        let why = unsafe { CStr::from_ptr(fs_last_error(handle)) }
-            .to_string_lossy()
-            .to_string();
+        let said = fs_last_error(handle);
+        assert!(!said.is_null(), "the failed read gave no reason");
+        let why = unsafe { CStr::from_ptr(said) }.to_string_lossy().to_string();
         assert!(why.contains("missing"), "{why}");
+        assert!(fs_last_error(handle).is_null(), "the same failure was reported twice");
         fs_close(handle);
     }
 

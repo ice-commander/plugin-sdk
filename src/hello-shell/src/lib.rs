@@ -58,6 +58,7 @@ struct Answers {
     view: Vec<IcDirEntry>,
     bytes: Vec<u8>,
     error: CString,
+    said: CString,
 }
 
 pub struct Mounted {
@@ -241,7 +242,15 @@ extern "C" fn fs_is_read_only(_handle: IcFsHandle) -> c_int {
 }
 
 extern "C" fn fs_last_error(handle: IcFsHandle) -> *const c_char {
-    mount(handle).map_or(std::ptr::null(), |mounted| mounted.answers().error.as_ptr())
+    mount(handle).map_or(std::ptr::null(), |mounted| {
+        let mut answers = mounted.answers();
+        answers.said = std::mem::take(&mut answers.error);
+        if answers.said.as_bytes().is_empty() {
+            std::ptr::null()
+        } else {
+            answers.said.as_ptr()
+        }
+    })
 }
 
 #[derive(Default)]

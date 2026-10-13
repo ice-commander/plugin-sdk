@@ -142,6 +142,7 @@ pub struct Opened {
     columns: Vec<IcFsColumn>,
     bytes: Vec<u8>,
     error: CString,
+    said: CString,
 }
 
 /// A task per non-empty line. A line ending in `[x]` starts out done, so a
@@ -177,6 +178,7 @@ impl Opened {
             columns: Vec::new(),
             bytes: Vec::new(),
             error: CString::default(),
+            said: CString::default(),
         }
     }
 
@@ -271,11 +273,15 @@ extern "C" fn fs_close(handle: IcFsHandle) {
 
 /// `list` is required whether or not a filesystem declares columns; `list_rows`
 /// is the optional one that fills them.
+const NO_SUCH_LINE: &str = "no such line in this checklist";
+
 extern "C" fn fs_list(handle: IcFsHandle, path: *const c_char) -> IcListing {
-    if !text_of(path).is_empty() {
-        return IcListing::EMPTY;
-    }
+    let inside = !text_of(path).is_empty();
     with_opened(handle, |opened| {
+        if inside {
+            opened.error = CString::new(NO_SUCH_LINE).unwrap_or_default();
+            return IcListing::EMPTY;
+        }
         fill_entries(opened);
         IcListing {
             items: opened.entries.as_ptr(),
@@ -306,10 +312,12 @@ fn fill_entries(opened: &mut Opened) {
 }
 
 extern "C" fn fs_list_rows(handle: IcFsHandle, path: *const c_char) -> IcRows {
-    if !text_of(path).is_empty() {
-        return IcRows::EMPTY;
-    }
+    let inside = !text_of(path).is_empty();
     with_opened(handle, |opened| {
+        if inside {
+            opened.error = CString::new(NO_SUCH_LINE).unwrap_or_default();
+            return IcRows::EMPTY;
+        }
         fill_entries(opened);
         note_what_is_left(handle, opened);
         let shown: Vec<Task> = opened.shown().into_iter().cloned().collect();
@@ -496,6 +504,7 @@ extern "C" fn fs_read(handle: IcFsHandle, path: *const c_char) -> IcBytes {
     let wanted = text_of(path);
     with_opened(handle, |opened| {
         let Some(task) = opened.tasks.iter().find(|task| task.name == wanted) else {
+            opened.error = CString::new(NO_SUCH_LINE).unwrap_or_default();
             return IcBytes::EMPTY;
         };
         opened.bytes = format!(
@@ -518,8 +527,12 @@ extern "C" fn fs_read_only(_handle: IcFsHandle) -> c_int {
 
 extern "C" fn fs_last_error(handle: IcFsHandle) -> *const c_char {
     with_opened(handle, |opened| {
-        opened.error = CString::new("no such line in this checklist").unwrap_or_default();
-        opened.error.as_ptr()
+        opened.said = std::mem::take(&mut opened.error);
+        if opened.said.as_bytes().is_empty() {
+            std::ptr::null()
+        } else {
+            opened.said.as_ptr()
+        }
     })
     .unwrap_or(std::ptr::null())
 }

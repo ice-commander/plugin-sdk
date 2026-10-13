@@ -268,6 +268,7 @@ struct Opened {
     view: Vec<IcDirEntry>,
     bytes: Vec<u8>,
     error: CString,
+    said: CString,
 }
 
 fn with_opened<R>(handle: IcFsHandle, f: impl FnOnce(&mut Opened) -> R) -> Option<R> {
@@ -307,6 +308,7 @@ extern "C" fn kind_open(settings: *const u8, len: u64, _user_data: *mut c_void) 
         view: Vec::new(),
         bytes: Vec::new(),
         error: CString::default(),
+        said: CString::default(),
     }))) as IcFsHandle
 }
 
@@ -338,11 +340,15 @@ fn wanted(path: *const c_char) -> String {
         .to_string()
 }
 
+const NOT_ON_THE_SHELF: &str = "there is nothing by that name on this shelf";
+
 extern "C" fn fs_list(handle: IcFsHandle, path: *const c_char) -> IcListing {
-    if !wanted(path).is_empty() {
-        return IcListing::EMPTY;
-    }
+    let inside = !wanted(path).is_empty();
     with_opened(handle, |o| {
+        if inside {
+            o.error = CString::new(NOT_ON_THE_SHELF).unwrap_or_default();
+            return IcListing::EMPTY;
+        }
         o.names = HOLDS
             .iter()
             .map(|held| CString::new(*held).unwrap_or_default())
@@ -371,6 +377,7 @@ extern "C" fn fs_read(handle: IcFsHandle, path: *const c_char) -> IcBytes {
     let name = wanted(path);
     with_opened(handle, |o| {
         if !HOLDS.contains(&name.as_str()) {
+            o.error = CString::new(NOT_ON_THE_SHELF).unwrap_or_default();
             return IcBytes::EMPTY;
         }
         o.bytes = format!("{name}, from the {} shelf\n", o.shelf).into_bytes();
@@ -388,8 +395,12 @@ extern "C" fn fs_read_only(_handle: IcFsHandle) -> c_int {
 
 extern "C" fn fs_last_error(handle: IcFsHandle) -> *const c_char {
     with_opened(handle, |o| {
-        o.error = CString::new("there is nothing by that name on this shelf").unwrap_or_default();
-        o.error.as_ptr()
+        o.said = std::mem::take(&mut o.error);
+        if o.said.as_bytes().is_empty() {
+            std::ptr::null()
+        } else {
+            o.said.as_ptr()
+        }
     })
     .unwrap_or(std::ptr::null())
 }

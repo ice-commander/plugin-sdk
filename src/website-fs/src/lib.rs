@@ -48,6 +48,7 @@ pub struct Opened {
     view: Vec<IcDirEntry>,
     bytes: Vec<u8>,
     error: CString,
+    said: CString,
 }
 
 impl Opened {
@@ -115,6 +116,7 @@ pub fn opened_from(settings: &str) -> Option<Opened> {
         view: Vec::new(),
         bytes: Vec::new(),
         error: CString::default(),
+        said: CString::default(),
     })
 }
 
@@ -223,7 +225,15 @@ extern "C" fn fs_is_read_only(_handle: IcFsHandle) -> c_int {
 }
 
 extern "C" fn fs_last_error(handle: IcFsHandle) -> *const c_char {
-    with_opened(handle, |opened| opened.error.as_ptr()).unwrap_or(std::ptr::null())
+    with_opened(handle, |opened| {
+        opened.said = std::mem::take(&mut opened.error);
+        if opened.said.as_bytes().is_empty() {
+            std::ptr::null()
+        } else {
+            opened.said.as_ptr()
+        }
+    })
+    .unwrap_or(std::ptr::null())
 }
 
 pub fn fs_vtable() -> IcFsVTable {
