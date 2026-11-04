@@ -28,11 +28,12 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use ic_plugin_api::{
-    check_host, needs_up_to, HostCheck, IcBytes, IcColumns, IcDirEntry, IcFsColumn, IcFsHandle,
-    IcFsSource, IcFsVTable, IcHost, IcListing, IcRow, IcRows, IC_ABI_VERSION, IC_ACTION_BUTTON,
-    IC_ACTION_ENABLED, IC_ACTION_ON, IC_ACTION_SHOWN, IC_ACTION_TOGGLE, IC_CELL_TICKED,
-    IC_COLUMN_CHECK, IC_COLUMN_TEXT, IC_ENABLE_ALWAYS, IC_ERR_HOST_TOO_OLD, IC_ERR_HOST_UNKNOWN,
-    IC_ERR_INIT_FAILED, IC_HOST_GTK, IC_OK, IC_OPEN_READ, IC_SEEK_END, IC_SEEK_SET, IC_SIDE_RIGHT,
+    check_host, draws_with_gtk, needs_up_to, HostCheck, IcBytes, IcColumns, IcDirEntry, IcFsColumn,
+    IcFsHandle, IcFsSource, IcFsVTable, IcHost, IcListing, IcRow, IcRows, IC_ABI_VERSION,
+    IC_ACTION_BUTTON, IC_ACTION_ENABLED, IC_ACTION_ON, IC_ACTION_SHOWN, IC_ACTION_TOGGLE,
+    IC_CELL_TICKED, IC_COLUMN_CHECK, IC_COLUMN_TEXT, IC_ENABLE_ALWAYS, IC_ERR_HOST_TOO_OLD,
+    IC_ERR_HOST_UNKNOWN, IC_ERR_INIT_FAILED, IC_OK, IC_OPEN_READ, IC_SEEK_END, IC_SEEK_SET,
+    IC_SIDE_RIGHT,
 };
 use std::cell::RefCell;
 use std::ffi::{CStr, CString};
@@ -561,6 +562,12 @@ pub fn vtable() -> IcFsVTable {
         action_state: Some(fs_action_state),
         cell_clicked: Some(fs_cell_clicked),
         set_permissions: None,
+        stream_open: None,
+        stream_read: None,
+        stream_write: None,
+        stream_close: None,
+        copy_within: None,
+        on_disk: None,
     }
 }
 
@@ -595,7 +602,10 @@ const ACTIONS: &[(&str, &str, &str, u32)] = &[
 /// indicator to go beside it. A null kind means a host too old to say, and
 /// before there was anything to say there was only the desktop.
 fn dresses_a_panel(kind: *const c_char) -> bool {
-    kind.is_null() || unsafe { CStr::from_ptr(kind) }.to_str() == Ok(IC_HOST_GTK)
+    kind.is_null()
+        || unsafe { CStr::from_ptr(kind) }
+            .to_str()
+            .is_ok_and(draws_with_gtk)
 }
 
 #[cfg_attr(feature = "export-abi", no_mangle)]
@@ -689,6 +699,7 @@ pub extern "C" fn ic_plugin_init(host: *const IcHost, kind: *const c_char) -> c_
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ic_plugin_api::IC_HOST_GTK;
 
     /// A host of the tests' own: one file, and the four calls this plugin
     /// makes to read it. The plugin is never handed bytes, so neither is it

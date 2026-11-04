@@ -420,6 +420,12 @@ pub fn fs_vtable() -> IcFsVTable {
         set_permissions: Some(fs_set_permissions),
         #[cfg(not(unix))]
         set_permissions: None,
+        stream_open: None,
+        stream_read: None,
+        stream_write: None,
+        stream_close: None,
+        copy_within: None,
+        on_disk: None,
     }
 }
 

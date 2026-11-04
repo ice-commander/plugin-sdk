@@ -23,9 +23,9 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use ic_plugin_api::{
-    check_host, needs_canvas, HostCheck, IcBytes, IcCanvas, IcFrame, IcFsSource, IcHost,
-    IcViewVTable, IcViewerVTable, IC_ABI_VERSION, IC_CANVAS_GL, IC_ERR_HOST_TOO_OLD,
-    IC_ERR_HOST_UNKNOWN, IC_ERR_INIT_FAILED, IC_ERR_NOT_THIS_HOST, IC_HOST_GTK, IC_OK,
+    check_host, draws_with_gtk, needs_canvas, HostCheck, IcBytes, IcCanvas, IcFrame, IcFsSource,
+    IcHost, IcViewVTable, IcViewerVTable, IC_ABI_VERSION, IC_CANVAS_GL, IC_ERR_HOST_TOO_OLD,
+    IC_ERR_HOST_UNKNOWN, IC_ERR_INIT_FAILED, IC_ERR_NOT_THIS_HOST, IC_OK,
 };
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -266,7 +266,10 @@ pub fn viewer_vtable(view: *const IcViewVTable) -> IcViewerVTable {
 }
 
 fn hands_out_gl(kind: *const c_char) -> bool {
-    !kind.is_null() && unsafe { CStr::from_ptr(kind) }.to_str() == Ok(IC_HOST_GTK)
+    !kind.is_null()
+        && unsafe { CStr::from_ptr(kind) }
+            .to_str()
+            .is_ok_and(draws_with_gtk)
 }
 
 #[cfg_attr(feature = "export-abi", no_mangle)]
@@ -304,6 +307,7 @@ pub extern "C" fn ic_plugin_shutdown() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ic_plugin_api::IC_HOST_GTK;
 
     thread_local! {
         static CALLED: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };

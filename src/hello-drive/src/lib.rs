@@ -28,10 +28,10 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use ic_plugin_api::{
-    check_host, needs_pinned_connections, HostCheck, IcBytes, IcConnectionVTable, IcDirEntry,
-    IcDrive, IcDrives, IcFsHandle, IcFsSource, IcFsVTable, IcHost, IcListing, IcPinnedConnection,
-    IcPinnedConnections, IcViewVTable, IC_ABI_VERSION, IC_ERR_HOST_TOO_OLD, IC_ERR_HOST_UNKNOWN,
-    IC_ERR_INIT_FAILED, IC_HOST_GTK, IC_OK, IC_SETTING_PLAIN,
+    check_host, draws_with_gtk, needs_pinned_connections, HostCheck, IcBytes, IcConnectionVTable,
+    IcDirEntry, IcDrive, IcDrives, IcFsHandle, IcFsSource, IcFsVTable, IcHost, IcListing,
+    IcPinnedConnection, IcPinnedConnections, IcViewVTable, IC_ABI_VERSION, IC_ERR_HOST_TOO_OLD,
+    IC_ERR_HOST_UNKNOWN, IC_ERR_INIT_FAILED, IC_OK, IC_SETTING_PLAIN,
 };
 use std::cell::RefCell;
 use std::ffi::{CStr, CString};
@@ -429,6 +429,12 @@ pub fn vtable() -> IcFsVTable {
         action_state: None,
         cell_clicked: None,
         set_permissions: None,
+        stream_open: None,
+        stream_read: None,
+        stream_write: None,
+        stream_close: None,
+        copy_within: None,
+        on_disk: None,
     }
 }
 
@@ -542,7 +548,10 @@ extern "C" fn page_event(event: *const u8, len: u64, _user_data: *mut c_void) ->
 
 /// A frontend with a connections list to pin to. A null kind means the desktop.
 fn keeps_a_connections_list(kind: *const c_char) -> bool {
-    kind.is_null() || unsafe { CStr::from_ptr(kind) }.to_str() == Ok(IC_HOST_GTK)
+    kind.is_null()
+        || unsafe { CStr::from_ptr(kind) }
+            .to_str()
+            .is_ok_and(draws_with_gtk)
 }
 
 #[cfg_attr(feature = "export-abi", no_mangle)]

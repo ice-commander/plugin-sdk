@@ -22,9 +22,9 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use ic_plugin_api::{
-    check_host, needs_up_to, HostCheck, IcClickFn, IcColumn, IcHost, IcSelection, IcSelectionItem,
-    IcTable, IC_ABI_VERSION, IC_ENABLE_ALWAYS, IC_ENABLE_ON_FILE, IC_ERR_HOST_TOO_OLD,
-    IC_ERR_HOST_UNKNOWN, IC_ERR_INIT_FAILED, IC_ERR_NOT_THIS_HOST, IC_HOST_GTK, IC_OK,
+    check_host, draws_with_gtk, needs_up_to, HostCheck, IcClickFn, IcColumn, IcHost, IcSelection,
+    IcSelectionItem, IcTable, IC_ABI_VERSION, IC_ENABLE_ALWAYS, IC_ENABLE_ON_FILE,
+    IC_ERR_HOST_TOO_OLD, IC_ERR_HOST_UNKNOWN, IC_ERR_INIT_FAILED, IC_ERR_NOT_THIS_HOST, IC_OK,
     IC_SIDE_RIGHT,
 };
 use std::cell::RefCell;
@@ -234,7 +234,10 @@ extern "C" fn on_remove(_user_data: *mut c_void, _parent_window: *mut c_void) {
 /// A null kind is an application from before `init` was told which one it is:
 /// the desktop.
 fn draws_panel_sources(kind: *const c_char) -> bool {
-    kind.is_null() || unsafe { CStr::from_ptr(kind) }.to_str() == Ok(IC_HOST_GTK)
+    kind.is_null()
+        || unsafe { CStr::from_ptr(kind) }
+            .to_str()
+            .is_ok_and(draws_with_gtk)
 }
 
 #[cfg_attr(feature = "export-abi", no_mangle)]
@@ -314,6 +317,7 @@ pub extern "C" fn ic_plugin_init(host: *const IcHost, kind: *const c_char) -> c_
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ic_plugin_api::IC_HOST_GTK;
 
     #[test]
     fn the_table_is_three_columns_keyed_by_the_number() {

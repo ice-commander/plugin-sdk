@@ -22,8 +22,8 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use ic_plugin_api::{
-    check_host, HostCheck, IcBytes, IcHost, IcViewVTable, IC_ABI_VERSION, IC_ENABLE_ALWAYS,
-    IC_ERR_HOST_TOO_OLD, IC_ERR_HOST_UNKNOWN, IC_ERR_INIT_FAILED, IC_HOST_GTK, IC_OK,
+    check_host, draws_with_gtk, HostCheck, IcBytes, IcHost, IcViewVTable, IC_ABI_VERSION,
+    IC_ENABLE_ALWAYS, IC_ERR_HOST_TOO_OLD, IC_ERR_HOST_UNKNOWN, IC_ERR_INIT_FAILED, IC_OK,
     IC_SIDE_RIGHT,
 };
 use serde_json::{json, Value};
@@ -327,7 +327,10 @@ extern "C" fn on_clicked(_user_data: *mut c_void, _parent_window: *mut c_void) {
 /// The one frontend that draws a plugin's panel toolbar button. A null kind
 /// is an application from before `init` was told which one it is: the desktop.
 fn draws_a_panel_toolbar(kind: *const c_char) -> bool {
-    kind.is_null() || unsafe { CStr::from_ptr(kind) }.to_str() == Ok(IC_HOST_GTK)
+    kind.is_null()
+        || unsafe { CStr::from_ptr(kind) }
+            .to_str()
+            .is_ok_and(draws_with_gtk)
 }
 
 #[cfg_attr(feature = "export-abi", no_mangle)]

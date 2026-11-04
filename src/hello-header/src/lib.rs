@@ -12,8 +12,8 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use ic_plugin_api::{
-    check_host, HostCheck, IcBytes, IcHost, IcViewVTable, IC_ABI_VERSION, IC_ERR_HOST_TOO_OLD,
-    IC_ERR_HOST_UNKNOWN, IC_ERR_INIT_FAILED, IC_HOST_GTK, IC_OK, IC_SIDE_LEFT,
+    check_host, draws_with_gtk, HostCheck, IcBytes, IcHost, IcViewVTable, IC_ABI_VERSION,
+    IC_ERR_HOST_TOO_OLD, IC_ERR_HOST_UNKNOWN, IC_ERR_INIT_FAILED, IC_OK, IC_SIDE_LEFT,
 };
 use serde_json::json;
 use std::cell::RefCell;
@@ -96,7 +96,10 @@ pub extern "C" fn on_clicked(_user_data: *mut c_void, _parent_window: *mut c_voi
 
 /// A frontend with a header bar of its own. A null kind means the desktop.
 fn has_a_header_bar(kind: *const c_char) -> bool {
-    kind.is_null() || unsafe { CStr::from_ptr(kind) }.to_str() == Ok(IC_HOST_GTK)
+    kind.is_null()
+        || unsafe { CStr::from_ptr(kind) }
+            .to_str()
+            .is_ok_and(draws_with_gtk)
 }
 
 #[cfg_attr(feature = "export-abi", no_mangle)]
