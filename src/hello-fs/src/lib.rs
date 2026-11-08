@@ -7,9 +7,8 @@
 //! difference. This example reads its file whole because a `.hello` file is tiny;
 //! a format that can be read a piece at a time should seek about instead.
 //!
-//! Writing goes the same way round: `fs_open(source, path, IC_OPEN_WRITE)`,
-//! `fs_write`, `fs_truncate`, `fs_close`, then `fs_changed` so the host throws
-//! away what it remembered. There is no slot that hands a whole file back.
+//! Writing: `fs_open(source, path, IC_OPEN_WRITE, size)`, `fs_write`, `fs_truncate`,
+//! `fs_close`, then `fs_changed`. There is no slot that hands a whole file back.
 //!
 //! The vtable slots after `list` and `read` are optional and say what else the
 //! mount can do: writing, renaming, removing, a shell, columns of its own. Leave
@@ -56,7 +55,8 @@ fn read_whole(source: IcFsSource, path: *const c_char) -> Option<Vec<u8>> {
     if host.is_null() || path.is_null() {
         return None;
     }
-    let stream = unsafe { ((*host).fs_open)(source, path, IC_OPEN_READ) };
+    let stream =
+        unsafe { ((*host).fs_open)(source, path, IC_OPEN_READ, ic_plugin_api::IC_SIZE_UNKNOWN) };
     if stream.is_null() {
         return None;
     }
@@ -246,6 +246,7 @@ pub fn vtable() -> IcFsVTable {
         stream_close: None,
         copy_within: None,
         on_disk: None,
+        stream_abort: None,
     }
 }
 
@@ -289,7 +290,12 @@ mod tests {
             at: usize,
         }
 
-        pub extern "C" fn fs_open(source: IcFsSource, _: *const c_char, mode: u32) -> IcStream {
+        pub extern "C" fn fs_open(
+            source: IcFsSource,
+            _: *const c_char,
+            mode: u32,
+            _: u64,
+        ) -> IcStream {
             if source.is_null() || mode != IC_OPEN_READ {
                 return std::ptr::null_mut();
             }

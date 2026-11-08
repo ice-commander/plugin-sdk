@@ -92,7 +92,7 @@ checksum = "6dbf3de79e51f3d586ab4cb9d5c3e2c14aa28ed23d180cf89b4df0454a69cc87"
 [[package]]
 name = "ic-plugin-api"
 version = "0.1.0"
-source = "git+https://github.com/ice-commander/plugin-api.git?branch=main#1fca3a08bcedf194e20a7a0d01963e7a7aeb8a64"
+source = "git+https://github.com/ice-commander/plugin-api.git?branch=main#a25e3a9df020ee00a1ca4776f76ad046a565e2a0"
 
 [[package]]
 name = "itoa"

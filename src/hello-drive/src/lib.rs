@@ -435,6 +435,7 @@ pub fn vtable() -> IcFsVTable {
         stream_close: None,
         copy_within: None,
         on_disk: None,
+        stream_abort: None,
     }
 }
 

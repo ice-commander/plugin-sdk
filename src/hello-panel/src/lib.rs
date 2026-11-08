@@ -231,7 +231,8 @@ fn read_whole(source: IcFsSource, path: *const c_char) -> Option<Vec<u8>> {
     if host.is_null() || path.is_null() {
         return None;
     }
-    let stream = unsafe { ((*host).fs_open)(source, path, IC_OPEN_READ) };
+    let stream =
+        unsafe { ((*host).fs_open)(source, path, IC_OPEN_READ, ic_plugin_api::IC_SIZE_UNKNOWN) };
     if stream.is_null() {
         return None;
     }
@@ -568,6 +569,7 @@ pub fn vtable() -> IcFsVTable {
         stream_close: None,
         copy_within: None,
         on_disk: None,
+        stream_abort: None,
     }
 }
 
@@ -716,7 +718,12 @@ mod tests {
             at: usize,
         }
 
-        pub extern "C" fn fs_open(source: IcFsSource, _: *const c_char, mode: u32) -> IcStream {
+        pub extern "C" fn fs_open(
+            source: IcFsSource,
+            _: *const c_char,
+            mode: u32,
+            _: u64,
+        ) -> IcStream {
             if source.is_null() || mode != IC_OPEN_READ {
                 return std::ptr::null_mut();
             }

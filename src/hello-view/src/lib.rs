@@ -63,7 +63,14 @@ fn looked_at(source: IcFsSource, path: &CStr) -> (u64, String) {
     if host.is_null() {
         return (0, String::new());
     }
-    let stream = unsafe { ((*host).fs_open)(source, path.as_ptr(), IC_OPEN_READ) };
+    let stream = unsafe {
+        ((*host).fs_open)(
+            source,
+            path.as_ptr(),
+            IC_OPEN_READ,
+            ic_plugin_api::IC_SIZE_UNKNOWN,
+        )
+    };
     if stream.is_null() {
         return (0, String::new());
     }
